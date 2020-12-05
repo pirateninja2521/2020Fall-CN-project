@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -39,7 +40,18 @@ int main(int argc, char **argv)
         if (new_fd<0){
             fprintf(stderr, "Accept error\n");
         }
-        char buf[128] = "Hello!\n";
+        FILE * f = fopen("mainpage.html", "r"); 
+        if (f == NULL){
+            fprintf(stderr, "open file error\n");
+        }
+        fseek(f, 0, SEEK_END);
+        int f_size = ftell(f);
+        rewind(f);
+        char content[4096];
+        fread(content, 1, f_size, f);
+        printf("%ld", strlen(content));
+        char buf[8192];
+        sprintf(buf, "HTTP/2 200 OK\r\nContent-Length: %ld\r\n\r\n%s", strlen(content), content);
         write(new_fd, buf, strlen(buf));
         close(new_fd);
     }
