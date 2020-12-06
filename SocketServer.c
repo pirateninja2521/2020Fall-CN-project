@@ -40,7 +40,13 @@ int main(int argc, char **argv)
         if (new_fd<0){
             fprintf(stderr, "Accept error\n");
         }
-        FILE * f = fopen("mainpage.html", "r"); 
+
+        char recv_buf[8192];
+        memset(recv_buf, 0, 8192);
+        int recv_len = recv(new_fd,recv_buf,8192,0);
+        // printf("%s", recv_buf);
+
+        FILE *f = fopen("mainpage.html", "r"); 
         if (f == NULL){
             fprintf(stderr, "open file error\n");
         }
@@ -48,11 +54,13 @@ int main(int argc, char **argv)
         int f_size = ftell(f);
         rewind(f);
         char content[4096];
+        memset(content, 0, 4096);
         fread(content, 1, f_size, f);
-        printf("%ld", strlen(content));
+        fclose(f);
+        // printf("%ld\n", strlen(content));
         char buf[8192];
         sprintf(buf, "HTTP/2 200 OK\r\nContent-Length: %ld\r\n\r\n%s", strlen(content), content);
-        write(new_fd, buf, strlen(buf));
+        send(new_fd, buf, strlen(buf), 0);
         close(new_fd);
     }
     return 0;
