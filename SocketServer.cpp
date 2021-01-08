@@ -37,12 +37,7 @@ int main(int argc, char **argv)
     if (listen(svr.listen_fd, 1024)<0){
         fprintf(stderr, "Listen error\n");
     }
-    FILE *f_video = fopen("CN_phase1_demo.webm", "rb"); 
-    if (f_video == NULL){
-        fprintf(stderr, "open file error\n");
-    }fseek(f_video, 0, SEEK_END);
-    int vid_size = ftell(f_video);
-    rewind(f_video);
+    
     while(1){
         int len = sizeof(cliaddr);
         printf("waiting\n");
@@ -55,29 +50,36 @@ int main(int argc, char **argv)
         memset(recv_buf, 0, 8192);
         int recv_len = recv(new_fd,recv_buf,8192,0);
         printf("%s", recv_buf);
-        // char *end = strchr(recv_buf, '\n');
-        // if (end) *end = '\0';
-        // printf("%s\n", recv_buf);
-        const char *get_html="GET / HTTP", *get_video = "GET /CN_phase1_demo.webm";
-        char content[1000005], buf[1100000];
-        FILE *f;
+        const char *get_html="GET / HTTP", *get_video = "GET /CN_phase1_demo.mp4";
+        char content[1000005], buf[10000];
+
+
         if (!strncmp(recv_buf, get_html, strlen(get_html))){
             printf("get html!\n");
-            f = fopen("mainpage.html", "r"); 
+            FILE *f = fopen("mainpage.html", "r"); 
             if (f == NULL){
                 fprintf(stderr, "open file error\n");
             }
             fseek(f, 0, SEEK_END);
             int f_size = ftell(f);
             rewind(f);
-            memset(content, 0, 2*f_size);
+            memset(content, 0, 10000);
             fread(content, 1, f_size, f);
             fclose(f);
             // printf("%ld\n", strlen(content));
-            sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Length: %ld\r\n\r\n%s", strlen(content), content);
+            sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Length: %ld\r\n\r\n", strlen(content));
+            send(new_fd, content, strlen(content), 0);
             send(new_fd, buf, strlen(buf), 0);
         }
         else if (!strncmp(recv_buf, get_video, strlen(get_video))){
+            // Open video.mp4
+            FILE *f_video = fopen("CN_phase1_demo.mp4", "rb"); 
+            if (f_video == NULL){
+                fprintf(stderr, "open file error\n");
+            }fseek(f_video, 0, SEEK_END);
+            int vid_size = ftell(f_video);
+            rewind(f_video);
+            
             char *ptr = strstr(recv_buf, "bytes=");
             int rs;
             sscanf(ptr, "bytes=%d", &rs);
@@ -87,8 +89,10 @@ int main(int argc, char **argv)
             int part_len;
             fseek(f_video, rs, SEEK_SET);
             part_len = fread(content, 1, (vid_size-rs>=1000000) ? 1000000:(vid_size-rs) , f_video);
+            // part_len = fread(content, 1, vid_size-rs , f_video);
+
             printf("part len %d\n", part_len);
-            sprintf(buf, "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes %d-%d/%d\r\nContent-Length: %d\r\nContent-Type: video/webm\r\n\r\n", rs, rs+part_len-1, vid_size-1, part_len);
+            sprintf(buf, "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes %d-%d/%d\r\nContent-Length: %d\r\nContent-Type: video/mp4\r\n\r\n", rs, rs+part_len-1, vid_size-1, part_len);
             printf("buf size: %ld\n%s", strlen(buf), buf);
             send(new_fd, buf, strlen(buf), 0);
             send(new_fd, content, part_len, 0);
@@ -97,7 +101,7 @@ int main(int argc, char **argv)
         }
         else{
             printf("get html!\n");
-            f = fopen("mainpage.html", "r"); 
+            FILE *f = fopen("mainpage.html", "r"); 
             if (f == NULL){
                 fprintf(stderr, "open file error\n");
             }
@@ -108,8 +112,10 @@ int main(int argc, char **argv)
             fread(content, 1, f_size, f);
             fclose(f);
             // printf("%ld\n", strlen(content));
-            sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Length: %ld\r\n\r\n%s", strlen(content), content);
+            sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Length: %ld\r\n\r\n", strlen(content));
             send(new_fd, buf, strlen(buf), 0);
+            send(new_fd, content, strlen(content), 0);
+
         }
         close(new_fd);
         // sleep(1);
