@@ -1,4 +1,4 @@
 all: server
 	
-server: SocketServer.c mainpage.html
-	gcc SocketServer.c -o server
+server: SocketServer.cpp mainpage.html
+	g++ SocketServer.cpp -o server
