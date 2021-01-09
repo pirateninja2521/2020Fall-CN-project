@@ -1,4 +1,4 @@
 all: server
 	
-server: SocketServer.cpp mainpage.html
-	g++ SocketServer.cpp -o server
+server: new_SocketServer.c mainpage.html
+	gcc new_SocketServer.c -lpthread -o server

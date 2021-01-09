@@ -50,7 +50,7 @@ int main(int argc, char **argv)
         memset(recv_buf, 0, 8192);
         int recv_len = recv(new_fd,recv_buf,8192,0);
         printf("%s", recv_buf);
-        const char *get_html="GET / HTTP", *get_video = "GET /CN_phase1_demo.mp4";
+        const char *get_html="GET / HTTP", *get_video = "GET /CN_phase1_demo.webm";
         char content[1000005], buf[10000];
 
 
@@ -66,14 +66,15 @@ int main(int argc, char **argv)
             memset(content, 0, 10000);
             fread(content, 1, f_size, f);
             fclose(f);
-            // printf("%ld\n", strlen(content));
+            
             sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Length: %ld\r\n\r\n", strlen(content));
-            send(new_fd, content, strlen(content), 0);
             send(new_fd, buf, strlen(buf), 0);
+            send(new_fd, content, strlen(content), 0);
+            printf("%s\n%s", buf, content);
         }
         else if (!strncmp(recv_buf, get_video, strlen(get_video))){
-            // Open video.mp4
-            FILE *f_video = fopen("CN_phase1_demo.mp4", "rb"); 
+            // Open video.webm
+            FILE *f_video = fopen("CN_phase1_demo.webm", "rb"); 
             if (f_video == NULL){
                 fprintf(stderr, "open file error\n");
             }fseek(f_video, 0, SEEK_END);
@@ -86,13 +87,12 @@ int main(int argc, char **argv)
             printf("rs %d\n", rs);
             printf("get video!\n");
             memset(content, 0, 1000005);
-            int part_len;
             fseek(f_video, rs, SEEK_SET);
-            part_len = fread(content, 1, (vid_size-rs>=1000000) ? 1000000:(vid_size-rs) , f_video);
+            int part_len = fread(content, 1, (vid_size-rs>=1000000) ? 1000000:(vid_size-rs) , f_video);
             // part_len = fread(content, 1, vid_size-rs , f_video);
 
             printf("part len %d\n", part_len);
-            sprintf(buf, "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes %d-%d/%d\r\nContent-Length: %d\r\nContent-Type: video/mp4\r\n\r\n", rs, rs+part_len-1, vid_size-1, part_len);
+            sprintf(buf, "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes %d-%d/%d\r\nContent-Length: %d\r\nContent-Type: video/webm\r\n\r\n", rs, rs+part_len-1, vid_size-1, part_len);
             printf("buf size: %ld\n%s", strlen(buf), buf);
             send(new_fd, buf, strlen(buf), 0);
             send(new_fd, content, part_len, 0);
