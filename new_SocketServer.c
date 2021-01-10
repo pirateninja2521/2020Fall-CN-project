@@ -14,7 +14,7 @@ typedef struct{
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 void send_html(int sockfd, char *type){
-    printf("send_html\n");
+    // printf("send_html\n");
     FILE *f;
     if (!strcmp(type, "main")){
         f = fopen("mainpage.html", "r"); 
@@ -34,10 +34,10 @@ void send_html(int sockfd, char *type){
     sprintf(send_message, "HTTP/1.1 200 OK\r\nContent-Length: %ld\r\n\r\n", strlen(send_content));
     send(sockfd, send_message, strlen(send_message), 0);
     send(sockfd, send_content, strlen(send_content), 0);
-    printf("%s\n", send_message);
+    // printf("%s\n", send_message);
 }
 void send_media(int sockfd, int start, char *mode){
-    printf("send_media\n");
+    // printf("send_media\n");
     FILE *f;
     if (!strcmp(mode, "audio")){
         f = fopen("demo/taichi.mp3", "rb"); 
@@ -61,7 +61,7 @@ void send_media(int sockfd, int start, char *mode){
     sprintf(send_message, "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes %d-%d/%d\r\nContent-Length: %d\r\n%s\r\n\r\n", start, start+part_len-1, med_size, part_len, type);
     send(sockfd, send_message, strlen(send_message), 0);
     send(sockfd, send_content, part_len, 0);
-    printf("%s\n", send_message);
+    // printf("%s\n", send_message);
 }
 void handle_message(int sockfd, char UserName[1024], char message[1024]){
     FILE *f = fopen("demo/demo.html", "r"); 
@@ -76,7 +76,6 @@ void handle_message(int sockfd, char UserName[1024], char message[1024]){
     const char *append = "<!-- append here -->\n";
     char *ptr = strstr(content, append), copy[819200];
     strcpy(copy, ptr+strlen(append));
-    printf("copy %s", copy);
     pthread_mutex_lock(&lock);
     f = fopen("demo/demo.html", "w");
     fwrite(content, 1, ptr-content, f);
@@ -94,12 +93,12 @@ void *handle_connection(void *fd){
     pthread_detach(pthread_self());
 
     int sockfd = *(int *)fd;
-    printf("handle fd: %d\n", sockfd);
+    // printf("handle fd: %d\n", sockfd);
 
     char recv_message[8192];
     memset( recv_message, 0, 8192);
     int recv_len = recv(sockfd, recv_message,8192,0);
-    printf("recv message:\n%s",  recv_message);	
+    // printf("recv message:\n%s",  recv_message);	
     if (strstr(recv_message, "GET / HTTP")!= NULL){
         send_html(sockfd, "main");
     }
@@ -119,11 +118,10 @@ void *handle_connection(void *fd){
         send_media(sockfd, start, "audio");
     }
     else if (strstr(recv_message, "POST")!= NULL){
-        printf("!!!!!\n");
         char *ptr1 = strstr(recv_message, "UserName=");
         char *ptr2 = strchr(ptr1, '&');
         *ptr2 = '\0';
-        printf("%s %s", ptr1, ptr2+1);
+        // printf("%s %s", ptr1, ptr2+1);
         handle_message(sockfd, ptr1+9, ptr2+1+8);
     }
     else{
@@ -154,6 +152,7 @@ int main(int argc, char **argv)
     
     if (bind(svr.listen_fd, (struct sockaddr*)&seraddr, sizeof(seraddr)) < 0) {
         fprintf(stderr, "Bind error\n");
+        exit(0);
     }
     if (listen(svr.listen_fd, 1024)<0){
         fprintf(stderr, "Listen error\n");
@@ -162,7 +161,7 @@ int main(int argc, char **argv)
     pthread_t tid;
     while(1){
         int len = sizeof(cliaddr);
-        printf("waiting\n");
+        // printf("waiting\n");
         int new_fd = accept(svr.listen_fd, (struct sockaddr*) &cliaddr, (socklen_t*) &len);
         if (new_fd<0){
             fprintf(stderr, "Accept error\n");
