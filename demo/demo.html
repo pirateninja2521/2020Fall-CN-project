@@ -15,5 +15,36 @@
         <video controls width="1000">
             <source src="./CN_phase1_demo.webm" type="video/webm">
         </video>
+
+
+        <h3>Say somthing?</h3>
+        <form action="test.php" method="post">
+            Name:<br><input type="text" name="UserName"><br>
+            Message:(500 char or less)<br><textarea name="Content"></textarea><br>
+            <input type="submit" value="send">
+        </form>
+        <h3>Message Board</h3>
+        <table style="width:50%">
+            <thead>
+                <tr>
+                    <th>Time stamp</th>
+                    <th>Name</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- append here -->
+                <tr> <td>Sun Jan 10 16:57:18 2021
+</td> <td>sam</td> <td>sam</td>
+                <tr> <td>Sun Jan 10 16:57:07 2021
+</td> <td>sam</td> <td>sam</td>
+                <tr> <td>Sun Jan 10 16:54:19 2021
+</td> <td>sam</td> <td>sam</td>
+                <tr> <td>Sun Jan 10 16:52:13 2021
+</td> <td>UserName=aaa</td> <td>Content=aaa</td>
+                <tr> <td>Sun Jan 10 16:52:07 2021
+</td> <td>UserName=aaa</td> <td>Content=aaa</td>
+            </tbody>
+        </table>
     </body>
 </html>

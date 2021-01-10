@@ -12,21 +12,22 @@ typedef struct{
     int listen_fd;
 }server; 
 
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 void send_html(int sockfd, char *type){
     printf("send_html\n");
     FILE *f;
     if (!strcmp(type, "main")){
         f = fopen("mainpage.html", "r"); 
     }
-    else{
+    else if (!strcmp(type, "demopage")){
         f = fopen("demo/demo.html", "r"); 
     }
     fseek(f, 0, SEEK_END);
     int f_size = ftell(f);
     rewind(f);
 
-    char send_message[8192], send_content[8192];
-    memset(send_content, 0, 8192);
+    char send_message[819200], send_content[819200];
+    memset(send_content, 0, 819200);
     fread(send_content, 1, f_size, f);
     fclose(f);
 
@@ -62,7 +63,33 @@ void send_media(int sockfd, int start, char *mode){
     send(sockfd, send_content, part_len, 0);
     printf("%s\n", send_message);
 }
+void handle_message(int sockfd, char UserName[1024], char message[1024]){
+    FILE *f = fopen("demo/demo.html", "r"); 
+    fseek(f, 0, SEEK_END);
+    int f_size = ftell(f);
+    rewind(f);
 
+    char content[819200];
+    memset(content, 0, 819200);
+    fread(content, 1, f_size, f);
+    fclose(f);
+    const char *append = "<!-- append here -->\n";
+    char *ptr = strstr(content, append), copy[819200];
+    strcpy(copy, ptr+strlen(append));
+    printf("copy %s", copy);
+    pthread_mutex_lock(&lock);
+    f = fopen("demo/demo.html", "w");
+    fwrite(content, 1, ptr-content, f);
+    fwrite(append, 1, strlen(append), f);
+    char new_tr[10240];
+    time_t timer = time(NULL);
+    sprintf(new_tr, "                <tr> <td>%s</td> <td>%s</td> <td>%s</td>\n", ctime(&timer), UserName, message);
+    fwrite(new_tr, 1, strlen(new_tr), f);
+    fwrite(ptr+strlen(append), 1, strlen(ptr)-strlen(append), f);
+    fclose(f);
+    pthread_mutex_unlock(&lock);
+    send_html(sockfd, "demopage");
+}
 void *handle_connection(void *fd){
     pthread_detach(pthread_self());
 
@@ -90,6 +117,14 @@ void *handle_connection(void *fd){
         int start;
         sscanf(ptr, "bytes=%d", &start);
         send_media(sockfd, start, "audio");
+    }
+    else if (strstr(recv_message, "POST")!= NULL){
+        printf("!!!!!\n");
+        char *ptr1 = strstr(recv_message, "UserName=");
+        char *ptr2 = strchr(ptr1, '&');
+        *ptr2 = '\0';
+        printf("%s %s", ptr1, ptr2+1);
+        handle_message(sockfd, ptr1+9, ptr2+1+8);
     }
     else{
         char *send_message="HTTP/1.1 403 Forbidden\r\n";
